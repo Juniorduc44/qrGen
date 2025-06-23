@@ -7,13 +7,216 @@
     <link rel="stylesheet" href="https://pyscript.net/releases/2025.5.1/core.css">
     <script type="module" src="https://pyscript.net/releases/2025.5.1/core.js"></script>
     <style>
-        /* Your existing CSS here */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            background-color: #1a202c; 
+            color: #e2e8f0; 
+            min-height: 100vh; 
+            box-sizing: border-box; 
+        }
+        .container {
+            background-color: #2d3748; 
+            padding: 25px 30px; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 6px 10px rgba(0,0,0,0.2); 
+            text-align: center;
+            max-width: 420px; 
+            width: 100%;
+            border: 1px solid #4a5568; 
+        }
+        h1 { 
+            color: #63b3ed; 
+            margin-bottom: 10px; 
+            font-size: 24px; 
+        }
+        .container p { 
+             color: #a0aec0; 
+             margin-bottom: 20px;
+             font-size: 15px;
+        }
+        input[type="text"] { 
+            padding: 12px 15px; 
+            margin-bottom: 20px; 
+            width: calc(100% - 30px); 
+            border: 1px solid #4a5568; 
+            border-radius: 8px; 
+            font-size: 15px; 
+            background-color: #1a202c; 
+            color: #e2e8f0; 
+            box-sizing: border-box; 
+        }
+        input[type="text"]::placeholder { 
+            color: #718096; 
+        }
+        button { 
+            padding: 12px 22px; 
+            margin: 8px 5px; 
+            cursor: pointer;
+            border: none;
+            border-radius: 8px; 
+            background-color: #38b2ac; 
+            color: white;
+            font-size: 15px; 
+            font-weight: 600; 
+            transition: background-color 0.2s ease-in-out; 
+        }
+        button:hover {
+            background-color: #319795; 
+        }
+        button:disabled {
+            background-color: #4a5568; 
+            color: #a0aec0; 
+            cursor: not-allowed;
+        }
+        #qr-output { 
+            margin-top: 25px; 
+            margin-left: auto;
+            margin-right: auto;
+            min-height: 220px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #4a5568; 
+            border-radius: 10px; 
+            background-color: #1a202c; 
+            width: 250px; 
+            height: 250px; 
+            overflow: hidden; 
+        }
+        #qr-output img { 
+            max-width: 100%; 
+            max-height: 100%; 
+            object-fit: contain; 
+            border: none; 
+            border-radius: 4px; 
+        }
+        .qr-placeholder {
+            color: #718096; 
+            font-style: italic;
+            text-align: center;
+            font-size: 14px; 
+        }
+        #error-message {
+            color: #fc8181; 
+            margin-top: 15px; 
+            min-height: 1.2em;
+            font-size: 14px;
+            font-weight: 500; 
+        }
+        .loading { 
+            color: #63b3ed; 
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <!-- Your existing HTML here -->
+    <div class="container">
+        <h1><span style="font-family: 'Consolas', 'Courier New', monospace;">&lt;/&gt;</span> QR Code Generator</h1>
+        <p>Enter text or URL to generate a QR code</p>
+
+        <input type="text" id="qr-text-input" placeholder="Enter text or URL here">
+        
+        <div>
+            <button id="create-button" py-click="create_qr_code">Create QR Code</button>
+            <button id="clear-button" py-click="clear_all_fields">Clear</button>
+        </div>
+
+        <div id="error-message"></div>
+
+        <div id="qr-output">
+            <img id="qr-image-display" src="" alt="QR Code will appear here" style="display: none;">
+            <div id="qr-placeholder" class="qr-placeholder">
+                📱 QR Code will appear here
+            </div>
+        </div>
+    </div>
+
     <script type="py" config='{"packages": ["segno"]}'>
-        // Your existing PyScript code here
+import segno
+import io
+import base64
+from pyscript import document
+
+def create_qr_code(event):
+    """
+    Generates a QR code from the text in the input field and displays it.
+    """
+    qr_text_input = document.querySelector("#qr-text-input")
+    qr_image_display = document.querySelector("#qr-image-display")
+    qr_placeholder = document.querySelector("#qr-placeholder")
+    error_message = document.querySelector("#error-message")
+    create_button = document.querySelector("#create-button")
+
+    error_message.innerText = ""
+    create_button.disabled = True
+    create_button.innerText = "Generating..."
+
+    try:
+        data = qr_text_input.value.strip()
+        
+        if not data:
+            error_message.innerText = "Please enter some text or a URL."
+            qr_image_display.style.display = "none"
+            qr_placeholder.style.display = "block"
+            return
+
+        qr_code = segno.make(data)
+        
+        buffer = io.BytesIO()
+        qr_code.save(buffer, kind='png', scale=6) 
+        buffer.seek(0)
+        img_bytes = buffer.read()
+        
+        img_base64_str = base64.b64encode(img_bytes).decode("utf-8")
+        img_data_url = f"data:image/png;base64,{img_base64_str}"
+
+        qr_image_display.src = img_data_url
+        qr_image_display.alt = f"QR Code for: {data}"
+        qr_image_display.style.display = "block"
+        qr_placeholder.style.display = "none"
+
+    except Exception as e:
+        print(f"Error generating QR Code with segno: {e}")
+        import urllib.parse
+        encoded_data = urllib.parse.quote_plus(data)
+        try:
+            api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={encoded_data}"
+            qr_image_display.src = api_url
+            qr_image_display.alt = f"QR Code for: {data}"
+            qr_image_display.style.display = "block"
+            qr_placeholder.style.display = "none"
+            error_message.innerText = "Using external QR service (fallback)."
+        except Exception as e2:
+            print(f"Fallback also failed: {e2}")
+            error_message.innerText = f"Error generating QR code: {str(e)}"
+            qr_image_display.style.display = "none"
+            qr_placeholder.style.display = "block"
+    
+    finally:
+        create_button.disabled = False
+        create_button.innerText = "Create QR Code"
+
+
+def clear_all_fields(event):
+    """
+    Clears the text input field and the displayed QR code image.
+    """
+    qr_text_input = document.querySelector("#qr-text-input")
+    qr_image_display = document.querySelector("#qr-image-display")
+    qr_placeholder = document.querySelector("#qr-placeholder")
+    error_message = document.querySelector("#error-message")
+
+    qr_text_input.value = ""
+    qr_image_display.src = ""
+    qr_image_display.alt = "QR Code will appear here"
+    qr_image_display.style.display = "none"
+    qr_placeholder.style.display = "block"
+    error_message.innerText = ""
     </script>
 </body>
 </html>
