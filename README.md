@@ -35,3 +35,7 @@ Bug reports and feature requests are welcome! Please open an issue.
 
 ## License 📄
 This project is licensed under the [MIT License](LICENSE)
+
+## **📌 Policy Links**  
+- [Full Privacy Policy](PRIVACY.md)  
+- [Terms of Service](TERMS.md)  
